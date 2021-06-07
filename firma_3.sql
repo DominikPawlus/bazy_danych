@@ -1,16 +1,13 @@
 DROP DATABASE firma;
 DROP SCHEMA ksiegowosc;
 
--- cw1
 CREATE DATABASE firma;
 
--- cw2
 CREATE SCHEMA ksiegowosc;
 
 USE firma;
 USE ksiegowosc;
 
--- cw3
 CREATE TABLE pracownicy(
 	id_pracownika int NOT NULL AUTO_INCREMENT,
 	imie varchar(25) NOT NULL, 
@@ -54,7 +51,6 @@ CREATE TABLE wynagrodzenia(
     FOREIGN KEY (id_pensji) REFERENCES pensje(id_pensji),
     FOREIGN KEY (id_premii) REFERENCES premie(id_premii));
 
--- cw4
 INSERT INTO pracownicy(imie, nazwisko, adres, telefon)
 	VALUES('Bazylia', 'Barnaba', 'Toussaint', 784672018), ('Stefan', 'Kołaczkowski', 'Kraków', 674563872), ('Michaił', 'Tal', 'Ryga', 66836720), ('Geralt', 'Z Rivii', 'Rivia', 758352637), ('Jadwiga', 'Nałkowska', 'Warszawa', 655534625), ('Eddie', 'Hall', 'Londyn', 787676565), ('Robert', 'Biedroń', 'Krosno', 567456019), ('Fakir', 'Michał', 'Kair', 63546785), ('Ragnar', 'Lodbrok', 'Kattegatt', 77745633), ('Tyrion', 'Lannister', 'Kings Landing', 786543245);
 
@@ -70,84 +66,35 @@ INSERT INTO pensje(stanowisko, kwota, id_premii)
 INSERT INTO wynagrodzenia(data_, id_pracownika, id_godziny, id_pensji, id_premii)
 values ('2018-02-12',1,1,1,8),('2018-03-13',2,2,2,4),('2018-03-14',3,3,3,10),('2018-05-14',4,4,4,9),('2019-02-17',5,5,5,1),('2019-10-23',6,6,6,5),('2019-02-01',7,7,7,2),('2020-07-22',8,8,8,3),('2020-09-17',9,9,9,6),('2021-01-21',10,10,10,7);
 
--- cw5
 -- a
-SELECT id_pracownika,adres FROM pracownicy; 
+UPDATE ksiegowosc.pracownicy
+SET telefon = CONCAT('(+48) ', telefon );
+SELECT telefon FROM ksiegowosc.pracownicy;
 
 -- b
-SELECT pracownicy.id_pracownika, pensje.kwota 
-from pracownicy INNER JOIN (pensje INNER JOIN wynagrodzenia ON pensje.id_pensji = wynagrodzenia.id_pensji) ON pracownicy.id_pracownika = wynagrodzenia.id_pracownika 
-WHERE pensje.kwota > 1000.00;
+UPDATE ksiegowosc.pracownicy
+SET telefon = SUBSTRING(telefon, 1, 9)+'-'+
+             SUBSTRING(telefon, 10, 3)+'-'+
+             SUBSTRING(telefon, 14, 3);
+SELECT telefon FROM ksiegowosc.pracownicy;
 
 -- c
-SELECT pracownicy.id_pracownika
-FROM pracownicy INNER JOIN (pensje INNER JOIN (premie INNER JOIN wynagrodzenia ON premie.id_premii = wynagrodzenia.id_premii) ON pensje.id_pensji = wynagrodzenia.id_pensji) 
-ON pracownicy.id_pracownika = wynagrodzenia.id_pracownika
-WHERE premie.kwota = 0 AND pensje.kwota > 2000;
+SELECT  upper(nazwisko), LENGTH(nazwisko) nazwisko_len FROM ksiegowosc.pracownicy ORDER BY nazwisko_len DESC , nazwisko DESC LIMIT 1;
 
 -- d
-SELECT * FROM pracownicy WHERE imie LIKE 'J%';
+SELECT  md5(imie) md_imie, md5(nazwisko) md_nazwisko, md5(adres) md_adres, md5(telefon) md_telefon FROM ksiegowosc.pracownicy;
 
 -- e
-SELECT * FROM pracownicy 
-WHERE imie LIKE '%a' AND nazwisko LIKE '%n%';
+SELECT pracownicy.id_pracownika, pracownicy.imie, pracownicy.nazwisko, pensje.kwota AS pensja, premie.kwota AS premia 
+FROM ksiegowosc.pracownicy left JOIN (ksiegowosc.pensje left JOIN (ksiegowosc.premie left JOIN ksiegowosc.wynagrodzenia ON ksiegowosc.premie.id_premii = ksiegowosc.wynagrodzenia.id_premii)
+ON ksiegowosc.pensje.id_pensji = ksiegowosc.wynagrodzenia.id_pensji) 
+ON ksiegowosc.pracownicy.id_pracownika = ksiegowosc.wynagrodzenia.id_pracownika;
 
 -- f
-SELECT imie, nazwisko, liczba_godzin - 160 AS nadgodziny
-FROM pracownicy INNER JOIN godziny ON pracownicy.id_pracownika = godziny.id_pracownika
-where godziny.liczba_godzin > 160;
-
--- g
-SELECT pracownicy.imie, pracownicy.nazwisko, pensje.kwota
-FROM pracownicy INNER JOIN (pensje INNER JOIN wynagrodzenia ON pensje.id_pensji = wynagrodzenia.id_pensji) ON pracownicy.id_pracownika = wynagrodzenia.id_pracownika 
-WHERE pensje.kwota BETWEEN 1500 AND 3000;
-
--- h
-SELECT imie, nazwisko FROM ksiegowosc.pracownicy INNER JOIN (ksiegowosc.godziny INNER JOIN
-(ksiegowosc.premie INNER JOIN ksiegowosc.wynagrodzenia ON ksiegowosc.premie.id_premii = ksiegowosc.wynagrodzenia.id_premii)
-ON ksiegowosc.godziny.id_godziny = ksiegowosc.wynagrodzenia.id_godziny)
-ON ksiegowosc.pracownicy.id_pracownika = ksiegowosc.wynagrodzenia.id_pracownika
-WHERE ksiegowosc.godziny.liczba_godzin > 160 AND ksiegowosc.premie.kwota = 0;
-
--- i
-SELECT * FROM pracownicy
-INNER JOIN wynagrodzenia ON pracownicy.id_pracownika = wynagrodzenia.id_pracownika 
-INNER JOIN pensje ON pensje.id_pensji = wynagrodzenia.id_pensji 
-ORDER BY pensje.kwota;
-
--- j
-SELECT * FROM pracownicy INNER JOIN (pensje INNER JOIN (premie INNER JOIN wynagrodzenia ON premie.id_premii = wynagrodzenia.id_premii) ON pensje.id_pensji = wynagrodzenia.id_pensji) 
-ON pracownicy.id_pracownika = wynagrodzenia.id_pracownika
-ORDER BY pensje.kwota DESC, premie.kwota DESC;
-
--- k
-SELECT stanowisko, COUNT(pensje.stanowisko)
-FROM pensje
-GROUP BY stanowisko;
-
--- l
-SELECT MAX(pensje.kwota), MIN(pensje.kwota), AVG(pensje.kwota)
-FROM pensje
-WHERE stanowisko = 'manager';
-
--- m
-SELECT SUM(pensje.kwota)
-FROM pensje;
-
--- n
-SELECT stanowisko, SUM(pensje.kwota)
-FROM pensje
-GROUP BY stanowisko;
-
--- o
-SELECT stanowisko, COUNT(premie.kwota) 
-FROM premie INNER JOIN (pensje INNER JOIN wynagrodzenia ON pensje.id_pensji = wynagrodzenia.id_pensji) ON premie.id_premii = wynagrodzenia.id_premii
-GROUP BY stanowisko;
-
--- p
-SET FOREIGN_KEY_CHECKS = 0;
-DELETE pensje,premie,godziny
-FROM pracownicy INNER JOIN (pensje INNER JOIN (premie INNER JOIN (godziny INNER JOIN wynagrodzenia ON godziny.id_godziny = wynagrodzenia.id_godziny) ON premie.id_premii = wynagrodzenia.id_premii) ON pensje.id_pensji = wynagrodzenia.id_pensji)
-WHERE pensje.kwota < 1200;
-SET FOREIGN_KEY_CHECKS = 1;
+SELECT CONCAT('Pracownik ', imie, ' ', nazwisko, ' w dniu ', data_wynagrodzenia, ' otrzymał ',
+(pensje.kwota + premie.kwota), 'zł. Wynagrodzenie zasadnicze = ', CAST(pensje.kwota AS CHAR(10)), ' premie: ',
+premie.kwota, ' nadgodziny: ', premie.kwota) AS raport
+FROM ksiegowosc.pracownicy INNER JOIN ksiegowosc.wynagrodzenia ON ksiegowosc.pracownicy.id_pracownika = ksiegowosc.wynagrodzenia.id_pracownika
+INNER JOIN ksiegowosc.pensje ON ksiegowosc.wynagrodzenia.id_pensji = ksiegowosc.pensje.id_pensji
+INNER JOIN ksiegowosc.premie ON ksiegowosc.wynagrodzenia.id_premii = ksiegowosc.premie.id_premii
 
